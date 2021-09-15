@@ -9,6 +9,6 @@ class DashboardController extends Controller
 {
     public function dashboard()
     {
-        return auth()->user();
+        return 'Normal User Page';
     }
 }

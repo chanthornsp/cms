@@ -12,7 +12,18 @@ class AuthController extends Controller
     // show login form
     public function login()
     {
-        return view('auth.login');
+        // // get info user logged in with Normal User
+        // Auth::user();
+        // // get info user logged in with guard admin
+        // Auth::guard('admin')->user();
+
+        if(Auth::guard('admin')->check()){
+            return redirect()->route('admin.index');
+        }elseif(Auth::check()){
+            return redirect()->route('dashboard');
+        }else{
+            return view('auth.login');
+        }
     }
     // show register form
     public function register()
@@ -42,23 +53,30 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
-        // $user = User::where('email', $request->email)
-        //         // ->where('active',1)
-        //         ->first();
-        // if ($user && Hash::check($request->password, $user->password)) {
-        //     Auth::login($user);
-        //     return redirect()->route('dashboard');
-        // }
         $remember = false;
         if ($request->remember) {
             $remember = true;
         }
+        $user = User::where('email', $request->email)
+                // ->where('active',1)
+                ->first();
+// dd($user->role);
+        if($user && $user->role === 'admin' && Hash::check($request->password, $user->password)){
+                Auth::guard('admin')->login($user,$remember);
+                return redirect()->route('admin.index');
+        }
 
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password],$remember)) {
-            $request->session()->regenerate();
-
+        if ($user && Hash::check($request->password, $user->password)) {
+            Auth::login($user,$remember);
             return redirect()->route('dashboard');
         }
+
+
+        // if (Auth::attempt(['email' => $request->email, 'password' => $request->password],$remember)) {
+        //     $request->session()->regenerate();
+
+        //     return redirect()->route('dashboard');
+        // }
 
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
